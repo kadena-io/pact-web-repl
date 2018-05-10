@@ -21,6 +21,7 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import           Reflex
 import           Reflex.Dom
+import           Reflex.Dom.ACE
 ------------------------------------------------------------------------------
 import           Examples
 import           Pact.Repl
@@ -62,7 +63,8 @@ headWidget = do
   elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: "css/index.css") blank
   elAttr "link" ("rel" =: "stylesheet" <> "href" =: "css/font-awesome.min.css") blank
 
-  --let js s = elAttr "script" ("type" =: "text/javascript"<> "src" =: s) blank
+  -- let js s = elAttr "script" ("type" =: "text/javascript"<> "src" =: s) blank
+  -- js "js/ace.js"
 
 
 data ControlOut t = ControlOut
@@ -83,11 +85,16 @@ app = do
 codeWidget :: MonadWidget t m => Text -> Event t Text -> m (Dynamic t Text)
 codeWidget iv sv = do
     elAttr "div" ("id" =: "code") $ do
-      ta <- textArea $ def
-        & textAreaConfig_initialValue .~ iv
-        & textAreaConfig_setValue .~ sv
-        & textAreaConfig_attributes .~ constDyn ("class" =: "code-input")
-      return $ value ta
+      --ta <- textArea $ def
+      --  & textAreaConfig_initialValue .~ iv
+      --  & textAreaConfig_setValue .~ sv
+      --  & textAreaConfig_attributes .~ constDyn ("class" =: "code-input")
+      --return $ value ta
+      let aceCfg = def { _aceConfigMode = Just "ace/mode/pact" }
+      ace <- aceWidget def (AceDynConfig Nothing) never iv
+      withAceInstance ace (setValueACE <$> sv)
+      return $ aceValue ace
+
 
 data DisplayedSnippet
   = InputSnippet Text

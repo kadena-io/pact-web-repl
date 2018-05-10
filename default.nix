@@ -49,6 +49,8 @@ in
               rev = "2a4b1d333dea669038f10f30ab9b64aab2afd6b0";
             }) {}));
 
+            reflex-dom-ace = self.callCabal2nix "reflex-dom-ace" ../reflex-dom-ace {};
+
             # dontCheck is here because a couple tests were failing
             statistics = guardGhcjs (pkgs.haskell.lib.dontCheck (self.callCabal2nix "statistics" (pkgs.fetchFromGitHub {
               owner = "bos";
