@@ -1,10 +1,11 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RecursiveDo         #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RecursiveDo          #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TemplateHaskell      #-}
 
 -- |
--- Copyright   :  (C) 2016 Stuart Popejoy
+-- Copyright   :  (C) 2018 Kadena
 -- License     :  BSD-style (see the file LICENSE)
 --
 
@@ -20,7 +21,7 @@ import qualified Data.Sequence as S
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom hiding (Element, fromJSString)
 import           Reflex.Dom.ACE
 ------------------------------------------------------------------------------
 import           Examples
@@ -30,42 +31,7 @@ import           Pact.Types.Lang
 ------------------------------------------------------------------------------
 
 main :: IO ()
-main = mainWidgetWithHead headWidget app
-
-headWidget :: MonadWidget t m => m ()
-headWidget = do
-  el "title" $ text "Try Pact In The Browser!"
-  elAttr "meta" ("content" =: "text/html;charset=utf-8" <> "hhtp-equiv" =: "Content-Type") blank
-  elAttr "meta" ("content" =: "utf-8" <> "hhtp-equiv" =: "enconding") blank
-  elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1.0") blank
-  elAttr "meta" ("http-equiv" =: "CacheControl" <> "content" =: "no-cache, no-store, must-revalidate") blank
-  elAttr "meta" ("http-equiv" =: "Pragma" <> "content" =: "no-cache") blank
-  elAttr "meta" ("http-equiv" =: "Expires" <> "content" =: "0") blank
-  let relLink r s h = elAttr "link" ("rel" =: r <> "sizes" =: s <> "href" =: h) blank
-  relLink "apple-touch-icon" "57x57" "img/favicon/apple-icon-57x57.png"
-  relLink "apple-touch-icon" "60x60" "img/favicon/apple-icon-60x60.png"
-  relLink "apple-touch-icon" "72x72" "img/favicon/apple-icon-72x72.png"
-  relLink "apple-touch-icon" "76x76" "img/favicon/apple-icon-76x76.png"
-  relLink "apple-touch-icon" "114x114" "img/favicon/apple-icon-114x114.png"
-  relLink "apple-touch-icon" "120x120" "img/favicon/apple-icon-120x120.png"
-  relLink "apple-touch-icon" "144x144" "img/favicon/apple-icon-144x144.png"
-  relLink "apple-touch-icon" "152x152" "img/favicon/apple-icon-152x152.png"
-  relLink "apple-touch-icon" "180x180" "img/favicon/apple-icon-180x180.png"
-  let relLink2 s h = elAttr "link" ("rel" =: "icon" <> "type" =: "image/png" <> "sizes" =: s <> "href" =: h) blank
-  relLink2 "192x192" "img/favicon/android-icon-192x192.png"
-  elAttr "link" ("rel" =: "manifest" <> "href" =: "img/favicon/manifest.json") blank
-  elAttr "meta" ("name" =: "msapplication-TileColor" <> "content" =: "#ffffff") blank
-  elAttr "meta" ("name" =: "msapplication-TileImage" <> "content" =: "ms-icon-144x144.png") blank
-  elAttr "meta" ("name" =: "theme-color" <> "content" =: "#ffffff") blank
-
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: "http://fonts.googleapis.com/css?family=Roboto:300,600") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "href" =: "http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: "css/index.css") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "href" =: "css/font-awesome.min.css") blank
-
-  -- let js s = elAttr "script" ("type" =: "text/javascript"<> "src" =: s) blank
-  -- js "js/ace.js"
-
+main = mainWidget app
 
 data ControlOut t = ControlOut
     { controlDropdown  :: Dropdown t Int
@@ -84,16 +50,12 @@ app = do
 
 codeWidget :: MonadWidget t m => Text -> Event t Text -> m (Dynamic t Text)
 codeWidget iv sv = do
-    elAttr "div" ("id" =: "code") $ do
-      --ta <- textArea $ def
-      --  & textAreaConfig_initialValue .~ iv
-      --  & textAreaConfig_setValue .~ sv
-      --  & textAreaConfig_attributes .~ constDyn ("class" =: "code-input")
-      --return $ value ta
-      let aceCfg = def { _aceConfigMode = Just "ace/mode/pact" }
-      ace <- aceWidget def (AceDynConfig Nothing) never iv
-      withAceInstance ace (setValueACE <$> sv)
-      return $ aceValue ace
+    let ac = def { _aceConfigMode = Just "ace/mode/pact"
+                 , _aceConfigElemAttrs = "id" =: "ace-widget"
+                 }
+    ace <- aceWidgetStatic ac (AceDynConfig $ Just AceTheme_SolarizedLight) iv
+    _ <- withAceInstance ace (setValueACE <$> sv)
+    return $ aceValue ace
 
 
 data DisplayedSnippet

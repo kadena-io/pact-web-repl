@@ -49,7 +49,12 @@ in
               rev = "2a4b1d333dea669038f10f30ab9b64aab2afd6b0";
             }) {}));
 
-            reflex-dom-ace = self.callCabal2nix "reflex-dom-ace" ../reflex-dom-ace {};
+            reflex-dom-ace = (self.callCabal2nix "reflex-dom-ace" (pkgs.fetchFromGitHub {
+              owner = "reflex-frp";
+              repo = "reflex-dom-ace";
+              rev = "24e1ee4b84f50bd5b6b4401c4bdc28963ce8d80f";
+              sha256 = "0hdn00cd17a7zp56krqs3y5mpcml75pn8mnmhwyixqgscqd1q9y5";
+            }) {});
 
             # dontCheck is here because a couple tests were failing
             statistics = guardGhcjs (pkgs.haskell.lib.dontCheck (self.callCabal2nix "statistics" (pkgs.fetchFromGitHub {
@@ -79,7 +84,7 @@ in
     };
     
     shells = {
-      # ghc = ["pact-ghcjs"];
+      ghc = ["pact-ghcjs"];
       ghcjs = ["pact-ghcjs"];
     };
   

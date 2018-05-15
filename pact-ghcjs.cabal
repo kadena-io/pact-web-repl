@@ -24,6 +24,7 @@ executable pact
       base
     , bytestring
     , containers
+    , lens
     , mtl
     , pact
     , reflex
