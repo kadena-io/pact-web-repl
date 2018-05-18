@@ -118,7 +118,7 @@ body {
 }
 
 #editor_view {
-  height: 100%;
+  height: calc(100% - 31px);
   display: flex;
   flex-direction: row;
   flex: 1;
@@ -153,12 +153,6 @@ body {
 .repl-history {
   width: 100%;
   height: 100%;
-}
-
-.repl-input {
-  width: 100%;
-  position: absolute;
-  bottom: 0;
 }
 
 .separator {
@@ -288,7 +282,7 @@ iframe {
 }
 
 .repl-input-controls textarea {
-    width: 90%;
+    width: 100%;
     padding: 0;
     margin: 0;
 }
@@ -298,7 +292,7 @@ textarea {
 }
 
 .repl-input-controls button {
-    width: 9%;
+    width: 100%;
     padding: 0;
     margin: 0;
 }

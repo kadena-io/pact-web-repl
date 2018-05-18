@@ -24,6 +24,7 @@ executable pact
       base
     , bytestring
     , containers
+    , jsaddle
     , lens
     , mtl
     , pact
