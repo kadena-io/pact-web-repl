@@ -41,6 +41,11 @@ body {
     background: white;
 }
 
+select, option, button {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+}
+
 #compile_now {
     background-color: #d4ebe3;
 }
@@ -305,4 +310,8 @@ textarea {
     position: relative;
     top: 4px;
     right: 3px;
+}
+
+.menu-link {
+    padding: 5px 5px;
 }
