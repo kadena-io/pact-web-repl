@@ -21,3 +21,4 @@ cabal.project.local
 result
 dist
 dist-ghcjs
+all.js

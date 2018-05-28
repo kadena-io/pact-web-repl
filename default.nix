@@ -36,18 +36,33 @@ in
               sha256 = "1p7rc5m70rkm1ma8gnihfwyxysr0n3wxk8ijhp6qjnqp5zwifhhn";
             }) {}));
 
-            pact = self.callCabal2nix "pact" (pkgs.fetchFromGitHub {
+            pact = pkgs.haskell.lib.dontCheck (self.callCabal2nix "pact" (pkgs.fetchFromGitHub {
               owner = "kadena-io";
               repo = "pact";
-              rev = "a85363e915af37d06bec777814b4fcdba90779df";
-              sha256 = "07n6hb41lpj99r33712kqyvj610wk3n7n1404mmnh8g7l3wvsgjc";
-            }) {};
+              rev = "5578f638598a7979d16f1e8bbb5dd895b848e9ef";
+              sha256 = "05qaljizgi6fflygf6vnmzdhb69b3xpjwq6v171irkd8xnvsk2f2";
+            }) {});
 
             pact-persist = guardGhcjs (pkgs.haskell.lib.doJailbreak (self.callCabal2nix "pact-persist" (builtins.fetchGit {
               name = "pact-persist";
               url = ssh://git@github.com/kadena-io/pact-persist.git;
               rev = "2a4b1d333dea669038f10f30ab9b64aab2afd6b0";
             }) {}));
+
+            reflex-dom-ace = (self.callCabal2nix "reflex-dom-ace" (pkgs.fetchFromGitHub {
+              owner = "reflex-frp";
+              repo = "reflex-dom-ace";
+              rev = "24e1ee4b84f50bd5b6b4401c4bdc28963ce8d80f";
+              sha256 = "0hdn00cd17a7zp56krqs3y5mpcml75pn8mnmhwyixqgscqd1q9y5";
+            }) {});
+
+            # sbv >= 7.6
+            sbv = pkgs.haskell.lib.dontCheck (self.callCabal2nix "sbv" (pkgs.fetchFromGitHub {
+              owner = "LeventErkok";
+              repo = "sbv";
+              rev = "dbbdd396d069dc8235f5c8cf58209886318f6525";
+              sha256 = "0s607qbgiykgqv2b5sxcvzqpj1alxzqw6szcjzhs4hxcbbwkd60y";
+            }) {});
 
             # dontCheck is here because a couple tests were failing
             statistics = guardGhcjs (pkgs.haskell.lib.dontCheck (self.callCabal2nix "statistics" (pkgs.fetchFromGitHub {
@@ -75,9 +90,11 @@ in
     packages = {
       pact-ghcjs = ./.;
     };
-    
+    tools = ghc: [
+      pkgs.z3
+    ];
     shells = {
-      # ghc = ["pact-ghcjs"];
+      ghc = ["pact-ghcjs"];
       ghcjs = ["pact-ghcjs"];
     };
   

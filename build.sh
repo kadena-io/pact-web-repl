@@ -1,4 +1,4 @@
-BUILDROOT="dist-ghcjs"
+BUILDROOT="dist-newstyle"
 OUTDIR=$BUILDROOT/build/x86_64-osx/ghcjs-0.2.1/pact-ghcjs-2.3.8/c/pact/build/pact/pact.jsexe
-cabal --project-file=cabal-ghcjs.project --builddir=$BUILDROOT new-build pact-ghcjs
-cp $OUTDIR/* site
+cabal --builddir=$BUILDROOT new-build pact-ghcjs
+cp $OUTDIR/all.js site

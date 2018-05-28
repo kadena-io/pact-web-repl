@@ -1,101 +1,92 @@
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE RecursiveDo         #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE QuasiQuotes          #-}
+{-# LANGUAGE RecursiveDo          #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TemplateHaskell      #-}
 
 -- |
--- Copyright   :  (C) 2016 Stuart Popejoy
+-- Copyright   :  (C) 2018 Kadena
 -- License     :  BSD-style (see the file LICENSE)
 --
 
 module Main where
 
 ------------------------------------------------------------------------------
+import           Control.Lens
 import           Control.Monad.State.Strict
 import           Data.Map (Map)
 import qualified Data.Map as M
+import           Data.Maybe
 import           Data.Monoid
 import           Data.Sequence (Seq)
 import qualified Data.Sequence as S
+import           Data.String.QQ
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Language.Javascript.JSaddle
 import           Reflex
-import           Reflex.Dom
+import           Reflex.Dom hiding (Element, fromJSString)
+import           Reflex.Dom.ACE
 ------------------------------------------------------------------------------
-import           Examples
 import           Pact.Repl
 import           Pact.Repl.Types
 import           Pact.Types.Lang
 ------------------------------------------------------------------------------
 
 main :: IO ()
-main = mainWidgetWithHead headWidget app
-
-headWidget :: MonadWidget t m => m ()
-headWidget = do
-  el "title" $ text "Try Pact In The Browser!"
-  elAttr "meta" ("content" =: "text/html;charset=utf-8" <> "hhtp-equiv" =: "Content-Type") blank
-  elAttr "meta" ("content" =: "utf-8" <> "hhtp-equiv" =: "enconding") blank
-  elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1.0") blank
-  elAttr "meta" ("http-equiv" =: "CacheControl" <> "content" =: "no-cache, no-store, must-revalidate") blank
-  elAttr "meta" ("http-equiv" =: "Pragma" <> "content" =: "no-cache") blank
-  elAttr "meta" ("http-equiv" =: "Expires" <> "content" =: "0") blank
-  let relLink r s h = elAttr "link" ("rel" =: r <> "sizes" =: s <> "href" =: h) blank
-  relLink "apple-touch-icon" "57x57" "img/favicon/apple-icon-57x57.png"
-  relLink "apple-touch-icon" "60x60" "img/favicon/apple-icon-60x60.png"
-  relLink "apple-touch-icon" "72x72" "img/favicon/apple-icon-72x72.png"
-  relLink "apple-touch-icon" "76x76" "img/favicon/apple-icon-76x76.png"
-  relLink "apple-touch-icon" "114x114" "img/favicon/apple-icon-114x114.png"
-  relLink "apple-touch-icon" "120x120" "img/favicon/apple-icon-120x120.png"
-  relLink "apple-touch-icon" "144x144" "img/favicon/apple-icon-144x144.png"
-  relLink "apple-touch-icon" "152x152" "img/favicon/apple-icon-152x152.png"
-  relLink "apple-touch-icon" "180x180" "img/favicon/apple-icon-180x180.png"
-  let relLink2 s h = elAttr "link" ("rel" =: "icon" <> "type" =: "image/png" <> "sizes" =: s <> "href" =: h) blank
-  relLink2 "192x192" "img/favicon/android-icon-192x192.png"
-  elAttr "link" ("rel" =: "manifest" <> "href" =: "img/favicon/manifest.json") blank
-  elAttr "meta" ("name" =: "msapplication-TileColor" <> "content" =: "#ffffff") blank
-  elAttr "meta" ("name" =: "msapplication-TileImage" <> "content" =: "ms-icon-144x144.png") blank
-  elAttr "meta" ("name" =: "theme-color" <> "content" =: "#ffffff") blank
-
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: "http://fonts.googleapis.com/css?family=Roboto:300,600") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "href" =: "http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: "css/index.css") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "href" =: "css/font-awesome.min.css") blank
-
-  --let js s = elAttr "script" ("type" =: "text/javascript"<> "src" =: s) blank
-
+main = mainWidget app
 
 data ControlOut t = ControlOut
-    { controlDropdown  :: Dropdown t Int
+    { controlDropdown  :: Dynamic t Text
     , controlLoadEvent :: Event t ()
     }
 
+codeFromResponse :: XhrResponse -> Text
+codeFromResponse =
+    fromMaybe "error: could not connect to server" . _xhrResponse_responseText
+
 app :: MonadWidget t m => m ()
 app = do
+    pb <- getPostBuild
     ControlOut d le <- controlBar
     elAttr "div" ("id" =: "editor_view") $ do
       let getDemo = snd . (demos M.!)
-      let changeExample = getDemo <$> updated (value d)
-      code <- elAttr "div" ("id" =: "column1") $ codeWidget hello changeExample
+      ex <- performRequestAsync ((\u -> xhrRequest "GET" u def) <$> updated d)
+      --initialCode <- performRequestAsync (xhrRequest "GET" (snd $ head exampleData) def <$ pb)
+      code <- elAttr "div" ("id" =: "column1") $ do
+        codeWidget startingExpression $ codeFromResponse <$> ex
       elAttr "div" ("id" =: "separator" <> "class" =: "separator") blank
-      elAttr "div" ("id" =: "column2") $ replWidget $ tag (current code) le
+      (e,newExpr) <- elAttr' "div" ("id" =: "column2") $ do
+        elAttr "div" ("id" =: "code") $ do
+          mapM_ snippetWidget staticReplHeader
+          widgetHold (replWidget startingExpression) (replWidget <$> tag (current code) le)
+      timeToScroll <- delay 0.1 $ switch $ current newExpr
+      _ <- performEvent (scrollToBottom (_element_raw e) <$ timeToScroll)
+      return ()
+
+scrollToBottom :: (PToJSVal t, MonadIO m, MonadJSM m) => t -> m ()
+scrollToBottom e = liftJSM $ do
+    let pElem = pToJSVal e
+    (pElem <# ("scrollTop" :: String)) (pElem ^. js ("scrollHeight" :: String))
 
 codeWidget :: MonadWidget t m => Text -> Event t Text -> m (Dynamic t Text)
 codeWidget iv sv = do
-    elAttr "div" ("id" =: "code") $ do
-      ta <- textArea $ def
-        & textAreaConfig_initialValue .~ iv
-        & textAreaConfig_setValue .~ sv
-        & textAreaConfig_attributes .~ constDyn ("class" =: "code-input")
-      return $ value ta
+    let ac = def { _aceConfigMode = Just "ace/mode/pact"
+                 , _aceConfigElemAttrs = "id" =: "ace-widget"
+                 }
+    ace <- aceWidgetStatic ac (AceDynConfig $ Just AceTheme_SolarizedLight) iv
+    _ <- withAceInstance ace (setValueACE <$> sv)
+    return $ aceValue ace
+
 
 data DisplayedSnippet
   = InputSnippet Text
   | OutputSnippet Text
   deriving (Eq,Ord,Show,Read)
 
-dummyData :: Seq DisplayedSnippet
-dummyData = S.fromList
+staticReplHeader :: Seq DisplayedSnippet
+staticReplHeader = S.fromList
       [ OutputSnippet ";; Welcome to the Pact interactive repl"
       , OutputSnippet ";; Enter pact commands here"
       ]
@@ -104,76 +95,128 @@ snippetWidget :: MonadWidget t m => DisplayedSnippet -> m ()
 snippetWidget (InputSnippet t) = el "pre" $ text t
 snippetWidget (OutputSnippet t) = el "pre" $ text t
 
+------------------------------------------------------------------------------
 replWidget
     :: MonadWidget t m
-    => Event t Text
-    -> m ()
-replWidget newCode = do
-    initState <- liftIO $ initReplState Interactive
-    let runInput input snippets =
-          snippets <> S.singleton (InputSnippet input)
+    => Text
+    -> m (Event t Text)
+replWidget initialCode = mdo
+    initState <- liftIO $ initReplState StringEval
+    stateAndOut0 <- runReplStep0 (initState, mempty) initialCode
+    stateAndOut <- holdDyn stateAndOut0 evalResult
 
-    elAttr "div" ("id" =: "code") $ mdo
-      let start = (Left "init", initState)
-      replState <- holdDyn start $ leftmost
-        [ evalResult
-        , start <$ newCode
-        ]
-      snippets <- holdUniqDyn =<< foldDyn ($) dummyData (leftmost
-        [ runInput <$> newInput
-        , (\r ss -> ss <> S.singleton (OutputSnippet (showResult $ fst r))) <$> evalResult
-        , const dummyData <$ newCode
-        ])
-      _ <- dyn $ mapM_ snippetWidget <$> snippets
-      (ti, goEvent) <- divClass "repl-input-controls" $ mdo
-        ti <- textArea $ def
-          & attributes .~ constDyn mempty -- ("class" =: "repl-input")
-          & setValue .~ (mempty <$ buttonClicked)
-        (b,_) <- el' "button" $ text "Evaluate"
-        let buttonClicked = domEvent Click b
-        return (ti, buttonClicked)
-      let newInput = tag (current $ value ti) goEvent
-      evalResult <- performEvent $ leftmost
-        [ attachWith runExpr (current replState) newInput
-        , attachPromptlyDynWith runExpr replState newCode
-        ]
-      return ()
+    _ <- dyn (mapM_ snippetWidget . snd <$> stateAndOut)
+    newInput <- replInput
+    evalResult <- performEvent $
+      attachWith runReplStep (current stateAndOut) newInput
+    return newInput
 
-runExpr
+replInput :: MonadWidget t m => m (Event t Text)
+replInput = do
+    divClass "repl-input-controls" $ mdo
+      ta <- textArea $ def
+        & setValue .~ (mempty <$ buttonClicked)
+      (b,_) <- el' "button" $ text "Evaluate"
+      let buttonClicked = domEvent Click b
+      _ <- performEvent (liftJSM (pToJSVal (_textArea_element ta) ^. js0 ("focus" :: String)) <$ buttonClicked)
+      return $ tag (current $ value ta) buttonClicked
+
+runReplStep0
     :: MonadIO m
-    => (Either String (Term Name), ReplState)
+    => (ReplState, Seq DisplayedSnippet)
     -> Text
-    -> m (Either String (Term Name), ReplState)
-runExpr (_,s) e = liftIO $ runStateT (evalRepl' $ T.unpack e) s
+    -> m (ReplState, Seq DisplayedSnippet)
+runReplStep0 (s1,snippets1) e = do
+    (_,s2) <- liftIO $ runStateT (evalRepl' $ T.unpack e) s1
+    return (s2, snippets1 <> S.singleton (OutputSnippet $ T.pack $ _rOut s2))
 
-myEvalString :: Text -> IO Text
-myEvalString cmd = do
-  (er,_) <- initReplState StringEval >>= runStateT (evalRepl' $ T.unpack cmd)
-  return $ case er of
-    (Right v) -> T.pack $ show v
-    (Left e) -> "Error: " <> T.pack e
+runReplStep
+    :: MonadIO m
+    => (ReplState, Seq DisplayedSnippet)
+    -> Text
+    -> m (ReplState, Seq DisplayedSnippet)
+runReplStep (s1,snippets1) e = do
+    (eterm,s2) <- liftIO $ runStateT (evalRepl' $ T.unpack e) s1
+    return (s2, snippets1 <> S.fromList [InputSnippet e, OutputSnippet $ showResult eterm])
 
 showResult :: Show a => Either String a -> Text
 showResult (Right v) = T.pack $ show v
 showResult (Left e) = "Error: " <> T.pack e
-
-demos :: Map Int (Text, Text)
-demos = M.fromList $ zip [0..] exampleData
 
 controlBar :: MonadWidget t m => m (ControlOut t)
 controlBar = do
     elAttr "div" ("id" =: "options") $ do
       elAttr "div" ("style" =: "display: block;") $ do
         o <- elAttr "ul" ("class" =: "view_mode") $ do
-          d <- elAttr "li" ("class" =: "code-example-dropdown") $ do
+          d <- elAttr "li" ("class" =: "code_examples_fieldset") $ do
             elAttr "fieldset" ("class" =: "code_examples_fieldset") $ do
-              elAttr "li" ("id" =: "code_examples_fieldset") $ do
                 dropdown 0 (constDyn $ fmap fst demos) def
           load <- elAttr "li" ("style" =: "padding-left: 10px;" <> "class" =: "tooltip") $ do
             (e,_) <- elAttr' "label" ("id" =: "compile_now") $ text "Load"
             return $ domEvent Click e
-            --elClass "span" "tooltiptext" $ text "Click or Shift-Enter"
-          return (ControlOut d load)
+          elAttr "li" ("style" =: "padding-left: 10px;" <> "id" =: "pactVersion") $
+            elAttr "a" ("target" =: "_blank" <> "href" =: "https://github.com/kadena-io/pact") $ do
+              is <- liftIO $ initReplState StringEval
+              Right (TLiteral (LString ver) _) <- liftIO $ evalStateT (evalRepl' "(pact-version)") is
+              text $ "Pact Version " <> ver
+          let intToCode n = snd $ fromJust $ M.lookup n demos
+          return (ControlOut (intToCode <$> value d) load)
         elAttr "ul" ("class" =: "view_mode" <> "style" =: "float: right") $ do
-          elAttr "img" ("src" =: "img/kadena-logo84x20.png" <> "class" =: "logo-image") blank
+          el "li" $
+            el "label" $
+              elAttr "a" ("target" =: "_blank" <>
+                          "style" =: "color:black;text-decoration:none;" <>
+                          "href" =: "http://pact-language.readthedocs.io"
+                          ) $ do
+                elAttr "i" ("class" =: "fa fa-book" <> "aria-hidden" =: "true") blank
+                elAttr "span" ("id" =: "hideIfTiny" <> "class" =: "menu-link") $ text "Docs"
+          el "li" $
+            elAttr "a" ("target" =: "_blank" <> "href" =: "http://kadena.io") $
+              elAttr "img" ("src" =: "img/kadena-logo84x20.png" <> "class" =: "logo-image") blank
         return o
+
+exampleData :: [(Text, Text)]
+exampleData =
+  [ ("Hello World", "examples/helloWorld-1.0.repl")
+  , ("Simple Payment", "examples/simplePayments-1.0.repl")
+  , ("International Payment", "examples/internationalPayments-1.0.repl")
+  , ("Commercial Paper", "examples/commercialPaper-1.0.repl")
+  ]
+
+demos :: Map Int (Text, Text)
+demos = M.fromList $ zip [0..] exampleData
+
+------------------------------------------------------------------------------
+-- | We still have this hard coded initial value because Reflex has to put
+-- some value in before the first event fires, so we use this one.  It should
+-- match the first element of the exampleData list.
+startingExpression :: Text
+startingExpression = [s|
+;;
+;; "Hello, world!" smart contract/module
+;;
+
+;; Simulate message data specifying an administrator keyset.
+;; In production use 'mockAdminKey' would be an ED25519 hex-encoded public key.
+(env-data { "admin-keyset": ["mockAdminKey"] })
+
+;; Simulate that we've signed this transaction with the keyset.
+;; In pact, signatures are pre-validated and represented in the
+;; environment as a list of public keys.
+(env-keys ["mockAdminKey"])
+
+;; Keysets cannot be created in code, thus we read them in
+;; from the load message data.
+(define-keyset 'admin-keyset (read-keyset "admin-keyset"))
+
+;; Define the module.
+(module helloWorld 'admin-keyset
+  "A smart contract to greet the world."
+  (defun hello (name)
+    "Do the hello-world dance"
+    (format "Hello {}!" [name]))
+)
+
+;; and say hello!
+(hello "world")
+|]

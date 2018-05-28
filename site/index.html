@@ -1,11 +1,47 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script language="javascript" src="rts.js"></script>
-    <script language="javascript" src="lib.js"></script>
-    <script language="javascript" src="out.js"></script>
+    <title>Try Pact In The Browser!</title>
+    <meta content="text/html;charset=utf-8" hhtp-equiv="Content-Type">
+    <meta content="utf-8" hhtp-equiv="enconding">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="no-cache, no-store, must-revalidate" http-equiv="CacheControl">
+    <meta content="no-cache" http-equiv="Pragma">
+    <meta content="0" http-equiv="Expires">
+    <link href="img/favicon/apple-icon-57x57.png" rel="apple-touch-icon" sizes="57x57">
+    <link href="img/favicon/apple-icon-60x60.png" rel="apple-touch-icon" sizes="60x60">
+    <link href="img/favicon/apple-icon-72x72.png" rel="apple-touch-icon" sizes="72x72">
+    <link href="img/favicon/apple-icon-76x76.png" rel="apple-touch-icon" sizes="76x76">
+    <link href="img/favicon/apple-icon-114x114.png" rel="apple-touch-icon" sizes="114x114">
+    <link href="img/favicon/apple-icon-120x120.png" rel="apple-touch-icon" sizes="120x120">
+    <link href="img/favicon/apple-icon-144x144.png" rel="apple-touch-icon" sizes="144x144">
+    <link href="img/favicon/apple-icon-152x152.png" rel="apple-touch-icon" sizes="152x152">
+    <link href="img/favicon/apple-icon-180x180.png" rel="apple-touch-icon" sizes="180x180">
+    <link href="img/favicon/android-icon-192x192.png" rel="icon" sizes="192x192" type="image/png">
+    <link href="img/favicon/manifest.json" rel="manifest">
+    <meta content="#ffffff" name="msapplication-TileColor">
+    <meta content="ms-icon-144x144.png" name="msapplication-TileImage">
+    <meta content="#ffffff" name="theme-color">
+    <link href="http://fonts.googleapis.com/css?family=Roboto:300,600" rel="stylesheet" type="text/css">
+    <link href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/index.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/ace/1.2.5/ace.js" charset="utf-8"></script>
+    <script type="text/javascript" src="js/ace-mode-pact.js"></script>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/ace/1.2.5/theme-solarized_light.js"></script>
+  
   </head>
+
   <body>
+    <div id="ace-widget"></div>
   </body>
-  <script language="javascript" src="runmain.js" defer></script>
+  <script language="javascript" src="all.js" defer></script>
+<!--
+  <script>
+    var editor = ace.edit("ace-widget");
+  </script>
+-->
 </html>

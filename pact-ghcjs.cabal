@@ -24,11 +24,13 @@ executable pact
       base
     , bytestring
     , containers
+    , jsaddle
+    , lens
     , mtl
     , pact
     , reflex
     , reflex-dom
-    -- , reflex-dom-ace
+    , reflex-dom-ace
     , string-qq
     , text
   hs-source-dirs:      src
