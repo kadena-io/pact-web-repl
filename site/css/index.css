@@ -227,7 +227,11 @@ iframe {
 }
 
 #code {
-  overflow: visible;
+  overflow-wrap: break-word;
+}
+
+.replOut {
+  white-space: pre-wrap;
 }
 
 .ui-state-disabled {

@@ -48,10 +48,10 @@ codeFromResponse =
 
 app :: MonadWidget t m => m ()
 app = do
-    pb <- getPostBuild
+    _pb <- getPostBuild
     ControlOut d le <- controlBar
     elAttr "div" ("id" =: "editor_view") $ do
-      let getDemo = snd . (demos M.!)
+      -- let getDemo = snd . (demos M.!)
       ex <- performRequestAsync ((\u -> xhrRequest "GET" u def) <$> updated d)
       --initialCode <- performRequestAsync (xhrRequest "GET" (snd $ head exampleData) def <$ pb)
       code <- elAttr "div" ("id" =: "column1") $ do
@@ -93,8 +93,8 @@ staticReplHeader = S.fromList
       ]
 
 snippetWidget :: MonadWidget t m => DisplayedSnippet -> m ()
-snippetWidget (InputSnippet t) = el "pre" $ text t
-snippetWidget (OutputSnippet t) = el "pre" $ text t
+snippetWidget (InputSnippet t) = elAttr "pre" ("class" =: "replOut") $ text t
+snippetWidget (OutputSnippet t) = elAttr "pre" ("class" =: "replOut") $ text t
 
 ------------------------------------------------------------------------------
 replWidget
