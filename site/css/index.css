@@ -227,7 +227,11 @@ iframe {
 }
 
 #code {
-  overflow: visible;
+  overflow-wrap: break-word;
+}
+
+.replOut {
+  white-space: pre-wrap;
 }
 
 .ui-state-disabled {
@@ -286,10 +290,21 @@ iframe {
     width: 100%;
 }
 
-.repl-input-controls textarea {
-    width: 100%;
-    padding: 0;
-    margin: 0;
+.repl-input-controls span {
+  padding-right: 10px;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.repl-input-controls input {
+  width: 90%;
+  padding: 0;
+  margin: 0;
+  height: 14px;
+  border: none;
+  background-color: #fdf6e3;
+  font-family: monospace;
+  font-size: 13px;
 }
 textarea {
     font-family: monospace;
@@ -300,6 +315,15 @@ textarea {
     width: 100%;
     padding: 0;
     margin: 0;
+}
+
+#pactVersion {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#loadButton {
+  padding-left: 10px;
 }
 
 .code-example-dropdown {
