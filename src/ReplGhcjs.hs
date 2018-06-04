@@ -130,8 +130,9 @@ runReplStep0
     -> Text
     -> m (ReplState, Seq DisplayedSnippet)
 runReplStep0 (s1,snippets1) e = do
-    (_,s2) <- liftIO $ runStateT (evalRepl' $ T.unpack e) s1
-    return (s2, snippets1 <> S.singleton (OutputSnippet $ T.pack $ _rOut s2))
+    (r,s2) <- liftIO $ runStateT (evalRepl' $ T.unpack e) s1
+    return (s2, snippets1 <> S.singleton
+      (OutputSnippet $ T.pack $ either id (const $ _rOut s2) r))
 
 runReplStep
     :: MonadIO m
