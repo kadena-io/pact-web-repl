@@ -88,7 +88,8 @@ data DisplayedSnippet
 staticReplHeader :: Seq DisplayedSnippet
 staticReplHeader = S.fromList
       [ OutputSnippet ";; Welcome to the Pact interactive repl"
-      , OutputSnippet ";; Enter pact commands here"
+      , OutputSnippet ";; Use LOAD button to execute editor text"
+      , OutputSnippet ";; then just type at the \"pact>\" prompt to interact!"
       ]
 
 snippetWidget :: MonadWidget t m => DisplayedSnippet -> m ()
@@ -114,11 +115,13 @@ replWidget initialCode = mdo
 replInput :: MonadWidget t m => m (Event t Text)
 replInput = do
     divClass "repl-input-controls" $ mdo
-      ta <- textArea $ def
-        & setValue .~ (mempty <$ buttonClicked)
-      (b,_) <- el' "button" $ text "Evaluate"
-      let buttonClicked = domEvent Click b
-      _ <- performEvent (liftJSM (pToJSVal (_textArea_element ta) ^. js0 ("focus" :: String)) <$ buttonClicked)
+      el "span" $ text "pact>"
+      ta <- textInput
+            (def & setValue .~ (mempty <$ buttonClicked))
+      let buttonClicked = keypress Enter ta
+      -- (b,_) <- el' "button" $ text "Evaluate"
+      -- let buttonClicked = domEvent Click b
+      -- _ <- performEvent (liftJSM (pToJSVal (_textArea_element ta) ^. js0 ("focus" :: String)) <$ buttonClicked)
       return $ tag (current $ value ta) buttonClicked
 
 runReplStep0
@@ -137,7 +140,7 @@ runReplStep
     -> m (ReplState, Seq DisplayedSnippet)
 runReplStep (s1,snippets1) e = do
     (eterm,s2) <- liftIO $ runStateT (evalRepl' $ T.unpack e) s1
-    return (s2, snippets1 <> S.fromList [InputSnippet e, OutputSnippet $ showResult eterm])
+    return (s2, snippets1 <> S.fromList [InputSnippet ("pact> " <> e), OutputSnippet $ showResult eterm])
 
 showResult :: Show a => Either String a -> Text
 showResult (Right v) = T.pack $ show v
@@ -148,17 +151,18 @@ controlBar = do
     elAttr "div" ("id" =: "options") $ do
       elAttr "div" ("style" =: "display: block;") $ do
         o <- elAttr "ul" ("class" =: "view_mode") $ do
-          d <- elAttr "li" ("class" =: "code_examples_fieldset") $ do
-            elAttr "fieldset" ("class" =: "code_examples_fieldset") $ do
-                dropdown 0 (constDyn $ fmap fst demos) def
-          load <- elAttr "li" ("style" =: "padding-left: 10px;" <> "class" =: "tooltip") $ do
-            (e,_) <- elAttr' "label" ("id" =: "compile_now") $ text "Load"
-            return $ domEvent Click e
-          elAttr "li" ("style" =: "padding-left: 10px;" <> "id" =: "pactVersion") $
+          elAttr "li" ("id" =: "pactVersion") $
             elAttr "a" ("target" =: "_blank" <> "href" =: "https://github.com/kadena-io/pact") $ do
               is <- liftIO $ initReplState StringEval
               Right (TLiteral (LString ver) _) <- liftIO $ evalStateT (evalRepl' "(pact-version)") is
               text $ "Pact Version " <> ver
+          d <- elAttr "li" ("class" =: "code_examples_fieldset") $ do
+            elAttr "fieldset" ("class" =: "code_examples_fieldset") $ do
+                dropdown 0 (constDyn $ fmap fst demos) def
+          load <- elAttr "li" ("id" =: "loadButton" <> "class" =: "tooltip") $ do
+            (e,_) <- elAttr' "label" ("id" =: "compile_now") $ text "Load"
+            return $ domEvent Click e
+
           let intToCode n = snd $ fromJust $ M.lookup n demos
           return (ControlOut (intToCode <$> value d) load)
         elAttr "ul" ("class" =: "view_mode" <> "style" =: "float: right") $ do
