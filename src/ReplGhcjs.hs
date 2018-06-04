@@ -50,7 +50,7 @@ app :: MonadWidget t m => m ()
 app = do
     _pb <- getPostBuild
     ControlOut d le <- controlBar
-    elAttr "div" ("id" =: "editor_view") $ do
+    elAttr "div" ("id" =: "editor_view") $ mdo
       -- let getDemo = snd . (demos M.!)
       ex <- performRequestAsync ((\u -> xhrRequest "GET" u def) <$> updated d)
       --initialCode <- performRequestAsync (xhrRequest "GET" (snd $ head exampleData) def <$ pb)
@@ -60,7 +60,8 @@ app = do
       (e,newExpr) <- elAttr' "div" ("id" =: "column2") $ do
         elAttr "div" ("id" =: "code") $ do
           mapM_ snippetWidget staticReplHeader
-          widgetHold (replWidget startingExpression) (replWidget <$> tag (current code) le)
+          let replClick = domEvent Click e
+          widgetHold (replWidget replClick startingExpression) (replWidget replClick <$> tag (current code) le)
       timeToScroll <- delay 0.1 $ switch $ current newExpr
       _ <- performEvent (scrollToBottom (_element_raw e) <$ timeToScroll)
       return ()
@@ -99,30 +100,29 @@ snippetWidget (OutputSnippet t) = elAttr "pre" ("class" =: "replOut") $ text t
 ------------------------------------------------------------------------------
 replWidget
     :: MonadWidget t m
-    => Text
+    => Event t ()
+    -> Text
     -> m (Event t Text)
-replWidget initialCode = mdo
+replWidget replClick initialCode = mdo
     initState <- liftIO $ initReplState StringEval
     stateAndOut0 <- runReplStep0 (initState, mempty) initialCode
     stateAndOut <- holdDyn stateAndOut0 evalResult
 
     _ <- dyn (mapM_ snippetWidget . snd <$> stateAndOut)
-    newInput <- replInput
+    newInput <- replInput replClick
     evalResult <- performEvent $
       attachWith runReplStep (current stateAndOut) newInput
     return newInput
 
-replInput :: MonadWidget t m => m (Event t Text)
-replInput = do
+replInput :: MonadWidget t m => Event t () -> m (Event t Text)
+replInput setFocus = do
     divClass "repl-input-controls" $ mdo
       el "span" $ text "pact>"
-      ta <- textInput
-            (def & setValue .~ (mempty <$ buttonClicked))
-      let buttonClicked = keypress Enter ta
-      -- (b,_) <- el' "button" $ text "Evaluate"
-      -- let buttonClicked = domEvent Click b
-      -- _ <- performEvent (liftJSM (pToJSVal (_textArea_element ta) ^. js0 ("focus" :: String)) <$ buttonClicked)
-      return $ tag (current $ value ta) buttonClicked
+      ti <- textInput
+            (def & setValue .~ (mempty <$ enterPressed))
+      let enterPressed = keypress Enter ti
+      _ <- performEvent (liftJSM (pToJSVal (_textInput_element ti) ^. js0 ("focus" :: String)) <$ setFocus)
+      return $ tag (current $ value ti) enterPressed
 
 runReplStep0
     :: MonadIO m
