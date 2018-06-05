@@ -39,15 +39,9 @@ in
             pact = pkgs.haskell.lib.dontCheck (self.callCabal2nix "pact" (pkgs.fetchFromGitHub {
               owner = "kadena-io";
               repo = "pact";
-              rev = "5578f638598a7979d16f1e8bbb5dd895b848e9ef";
-              sha256 = "05qaljizgi6fflygf6vnmzdhb69b3xpjwq6v171irkd8xnvsk2f2";
+              rev = "8f4216d274749507158c5e23be8c4b32a75191a6";
+              sha256 = "13rpmjyr1x5z0yfxzr16ml1nmx6ln6bs9xwlzh5c6c6kkqwxpkjv";
             }) {});
-
-            pact-persist = guardGhcjs (pkgs.haskell.lib.doJailbreak (self.callCabal2nix "pact-persist" (builtins.fetchGit {
-              name = "pact-persist";
-              url = ssh://git@github.com/kadena-io/pact-persist.git;
-              rev = "2a4b1d333dea669038f10f30ab9b64aab2afd6b0";
-            }) {}));
 
             reflex-dom-ace = (self.callCabal2nix "reflex-dom-ace" (pkgs.fetchFromGitHub {
               owner = "reflex-frp";
@@ -79,13 +73,6 @@ in
               sha256 = "09fcf896bs6i71qhj5w6qbwllkv3gywnn5wfsdrcm0w1y6h8i88f";
             }) {}) "ghcjs");
 
-            # weeder = self.callHackage "weeder" "1.0.5" {};
-            weeder = guardGhcjs (self.callCabal2nix "weeder" (pkgs.fetchFromGitHub {
-              owner = "ndmitchell";
-              repo = "weeder";
-              rev = "56b46fe97782e86198f31c574ac73c8c966fee05";
-              sha256 = "005ks2xjkbypq318jd0s4896b9wa5qg3jf8a1qgd4imb4fkm3yh7";
-            }) {});
           };
     packages = {
       pact-ghcjs = ./.;
@@ -97,5 +84,5 @@ in
       ghc = ["pact-ghcjs"];
       ghcjs = ["pact-ghcjs"];
     };
-  
+
   })
