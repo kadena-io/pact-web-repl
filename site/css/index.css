@@ -306,6 +306,11 @@ iframe {
   font-family: monospace;
   font-size: 13px;
 }
+
+.repl-input-controls input:focus{
+    outline: none;
+}
+
 textarea {
     font-family: monospace;
     font-size: 13px;
