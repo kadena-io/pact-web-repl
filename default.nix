@@ -75,7 +75,10 @@ in
 
           };
     packages = {
-      pact-ghcjs = ./.;
+      pact-ghcjs = builtins.filterSource
+        (path: type: !(builtins.elem (baseNameOf path)
+           ["result" "dist" "dist-ghcjs" ".git"]))
+        ./.;
     };
     tools = ghc: [
       pkgs.z3
