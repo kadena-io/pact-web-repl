@@ -129,10 +129,15 @@ replInput setFocus = do
       _ <- performEvent (liftJSM (pToJSVal (_textInput_element ti) ^. js0 ("focus" :: String)) <$ setFocus)
       let newCommand = tag (current $ value ti) enterPressed
       commandHistory <- foldDyn ($) Z.empty $ leftmost
-        [ (\a z -> Z.push a $ Z.end z) <$> newCommand
+        [ addToHistory <$> newCommand
         , moveHistory <$> key
         ]
       return newCommand
+
+addToHistory a z =
+    if Just a == Z.safeCursor (Z.left zEnd) then zEnd else Z.push a zEnd
+  where
+    zEnd = Z.end z
 
 isMovement 38 = True
 isMovement 40 = True
