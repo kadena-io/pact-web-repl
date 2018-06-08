@@ -21,7 +21,8 @@ executable pact
   cpp-options:  -DGHCJS_BROWSER
 
   build-depends:
-      base
+      ListZipper
+    , base
     , bytestring
     , containers
     , jsaddle

@@ -15,6 +15,7 @@ module Main where
 ------------------------------------------------------------------------------
 import           Control.Lens
 import           Control.Monad.State.Strict
+import qualified Data.List.Zipper as Z
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Maybe
@@ -118,11 +119,27 @@ replInput :: MonadWidget t m => Event t () -> m (Event t Text)
 replInput setFocus = do
     divClass "repl-input-controls" $ mdo
       el "span" $ text "pact>"
-      ti <- textInput
-            (def & setValue .~ (mempty <$ enterPressed))
+      let sv = leftmost
+            [ mempty <$ enterPressed
+            , fromMaybe "" . Z.safeCursor <$> tagPromptlyDyn commandHistory key
+            ]
+      ti <- textInput (def & setValue .~ sv)
+      let key = ffilter isMovement $ domEvent Keydown ti
       let enterPressed = keypress Enter ti
       _ <- performEvent (liftJSM (pToJSVal (_textInput_element ti) ^. js0 ("focus" :: String)) <$ setFocus)
-      return $ tag (current $ value ti) enterPressed
+      let newCommand = tag (current $ value ti) enterPressed
+      commandHistory <- foldDyn ($) Z.empty $ leftmost
+        [ (\a z -> Z.push a $ Z.end z) <$> newCommand
+        , moveHistory <$> key
+        ]
+      return newCommand
+
+isMovement 38 = True
+isMovement 40 = True
+isMovement _ = False
+
+moveHistory 38 = Z.left
+moveHistory 40 = Z.right
 
 runReplStep0
     :: MonadIO m
