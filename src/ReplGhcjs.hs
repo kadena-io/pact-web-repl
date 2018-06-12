@@ -47,25 +47,38 @@ codeFromResponse :: XhrResponse -> Text
 codeFromResponse =
     fromMaybe "error: could not connect to server" . _xhrResponse_responseText
 
+data ClickState = DownAt (Int, Int) | Clicked | Selected
+  deriving (Eq,Ord,Show,Read)
+
 app :: MonadWidget t m => m ()
 app = do
     _pb <- getPostBuild
     ControlOut d le <- controlBar
     elAttr "div" ("id" =: "editor_view") $ mdo
-      -- let getDemo = snd . (demos M.!)
       ex <- performRequestAsync ((\u -> xhrRequest "GET" u def) <$> updated d)
-      --initialCode <- performRequestAsync (xhrRequest "GET" (snd $ head exampleData) def <$ pb)
       code <- elAttr "div" ("id" =: "column1") $ do
         codeWidget startingExpression $ codeFromResponse <$> ex
       elAttr "div" ("id" =: "separator" <> "class" =: "separator") blank
       (e,newExpr) <- elAttr' "div" ("id" =: "column2") $ do
         elAttr "div" ("id" =: "code") $ do
           mapM_ snippetWidget staticReplHeader
-          let replClick = domEvent Click e
+          clickType <- foldDyn ($) Nothing $ leftmost
+            [ setDown <$> domEvent Mousedown e
+            , clickClassifier <$> domEvent Mouseup e
+            ]
+          let replClick = () <$ ffilter (== Just Clicked) (updated clickType)
           widgetHold (replWidget replClick startingExpression) (replWidget replClick <$> tag (current code) le)
       timeToScroll <- delay 0.1 $ switch $ current newExpr
       _ <- performEvent (scrollToBottom (_element_raw e) <$ timeToScroll)
       return ()
+
+setDown :: (Int, Int) -> t -> Maybe ClickState
+setDown clickLoc _ = Just $ DownAt clickLoc
+
+clickClassifier :: (Int, Int) -> Maybe ClickState -> Maybe ClickState
+clickClassifier clickLoc (Just (DownAt loc1)) =
+  if clickLoc == loc1 then Just Clicked else Just Selected
+clickClassifier _ _ = Nothing
 
 scrollToBottom :: (PToJSVal t, MonadIO m, MonadJSM m) => t -> m ()
 scrollToBottom e = liftJSM $ do
@@ -134,17 +147,21 @@ replInput setFocus = do
         ]
       return newCommand
 
+addToHistory :: Eq a => a -> Z.Zipper a -> Z.Zipper a
 addToHistory a z =
     if Just a == Z.safeCursor (Z.left zEnd) then zEnd else Z.push a zEnd
   where
     zEnd = Z.end z
 
+isMovement :: (Num a, Eq a) => a -> Bool
 isMovement 38 = True
 isMovement 40 = True
 isMovement _ = False
 
+moveHistory :: (Num a1, Eq a1) => a1 -> Z.Zipper a -> Z.Zipper a
 moveHistory 38 = Z.left
 moveHistory 40 = Z.right
+moveHistory _ = id
 
 runReplStep0
     :: MonadIO m
