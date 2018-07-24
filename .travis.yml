@@ -2,4 +2,4 @@ language: nix
 os: osx
 osx_image: xcode9.4
 script:
-- nix-build --substituters 'https://pact.cachix.org' --trusted-public-keys 'pact.cachix.org-1:cg1bsryGrHnQzqEp52NcHq4mBBL+R25XbR2Q/I/vQ8Y='
+- nix-build --substituters 'https://pact.cachix.org?trusted=1' --trusted-public-keys 'pact.cachix.org-1:cg1bsryGrHnQzqEp52NcHq4mBBL+R25XbR2Q/I/vQ8Y='
