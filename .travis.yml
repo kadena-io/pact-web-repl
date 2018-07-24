@@ -1,0 +1,5 @@
+language: nix
+os: osx
+osx_image: xcode9.4
+script:
+- nix-build --substituters 'ssh://nix-ssh@nix.kadena.io' --trusted-public-keys 'nix.kadena.io-1:fap+8wc6eJOFbJ9yNa62l2/bPJ39/y12p/3Vb1x5YR8='
