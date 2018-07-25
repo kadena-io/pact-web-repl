@@ -12,8 +12,7 @@ before_script:
 - cat /etc/nix/nix.conf
 - whoami
 script:
-- nix-env -if nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
-  cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
+- nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
 - cachix use pact
 - cachix push cachix --watch-store&
 - nix-build -j2 | cachix push pact
