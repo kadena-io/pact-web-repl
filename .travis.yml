@@ -1,9 +1,19 @@
+os:
+- osx
 language: nix
-os: osx
-osx_image: xcode9.4
-script:
+sudo: required
+before_script:
+- sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
+- sudo mkdir -p /etc/nix
+- echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
+- sudo launchctl kickstart -k system/org.nixos.nix-daemon || true
+- echo "substituters = https://nixcache.reflex-frp.org https://cache.nixos.org/" | sudo tee -a /etc/nix/nix.conf
+- echo "trusted-public-keys = ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" | sudo tee -a /etc/nix/nix.conf
 - cat /etc/nix/nix.conf
 - whoami
-- echo "substituters = https://pact.cachix.org?trusted=1 https://nixcache.reflex-frp.org https://cache.nixos.org/" | sudo tee -a /etc/nix/nix.conf
-- echo "trusted-public-keys = pact.cachix.org-1:cg1bsryGrHnQzqEp52NcHq4mBBL+R25XbR2Q/I/vQ8Y= ryantrinkle.com-1:JJiAKaRv9mWgpVAz8dwewnZe0AzzEAzPkagE9SP5NWI= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" | sudo tee -a /etc/nix/nix.conf
-- nix-build
+script:
+- nix-env -if nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/db557aab7b690f5e0e3348459f2e4dc8fd0d9298
+  cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM='
+- cachix use pact
+- cachix push cachix --watch-store&
+- nix-build -j2 | cachix push pact
