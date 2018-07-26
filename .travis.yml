@@ -5,6 +5,7 @@ sudo: required
 cache:
   directories:
   - "/nix/"
+  timeout: 1000
 before_script:
 - sudo mount -o remount,exec,size=4G,mode=755 /run/user || true
 - sudo mkdir -p /etc/nix
