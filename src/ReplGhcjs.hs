@@ -52,7 +52,6 @@ data ClickState = DownAt (Int, Int) | Clicked | Selected
 
 app :: MonadWidget t m => m ()
 app = do
-    _pb <- getPostBuild
     ControlOut d le <- controlBar
     elAttr "div" ("id" =: "editor_view") $ mdo
       ex <- performRequestAsync ((\u -> xhrRequest "GET" u def) <$> updated d)
